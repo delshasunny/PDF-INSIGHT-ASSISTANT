@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Insight Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ff5f6d, #ffc371);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            font-size: 26px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .file-upload, .question-box {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            display: inline-block;
+            background-color: #ff4081;
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            font-family: Arial, sans-serif; /* Set font family */
+            font-size: 16px; /* Set font size */
+        }
+        #fileName {
+            color: #333;
+            font-size: 14px;
+        }
+        .error-message {
+            color: #ff4081;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        button {
+            background-color: #ff4081;
+            color: #fff;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            font-family: Arial, sans-serif; /* Set font family */
+            font-size: 16px; /* Set font size */
+        }
+        button:hover, label:hover {
+            background-color: #ff1e56;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            color: #333;
+            resize: none;
+            transition: border-color 0.3s ease;
+        }
+        textarea:focus, input[type="text"]:focus {
+            border-color: #ff4081;
+            outline: none;
+        }
+        textarea {
+            height: 150px;
+            margin-top: 15px;
+        }
+        #answer {
+            font-size: 16px;
+            color: #333;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        function displayFileName() {
+            const fileInput = document.getElementById('pdfFile');
+            const fileName = document.getElementById('fileName');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Check if a file is selected and if it's a PDF
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.type === "application/pdf") {
+                    fileName.innerText = file.name;
+                    errorMessage.style.display = 'none'; // Hide error message
+                } else {
+                    fileName.innerText = '';
+                    errorMessage.style.display = 'block'; // Show error message
+                    errorMessage.innerText = "Please choose a PDF format file.";
+                    fileInput.value = ''; // Clear the file input
+                }
+            } else {
+                fileName.innerText = '';
+                errorMessage.style.display = 'none';
+            }
+        }
+
+        async function uploadPdf() {
+            const fileInput = document.getElementById('pdfFile');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            document.getElementById('pdfText').innerText = data.text;
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const pdfText = document.getElementById('pdfText').value;
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, text: pdfText })
+            });
+            const data = await response.json();
+            document.getElementById('answer').innerText = data.answer;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Insight Assistant</h1>
+        
+        <div class="file-upload">
+            <input type="file" id="pdfFile" onchange="displayFileName()">
+            <label for="pdfFile">Choose PDF</label>
+            <span id="fileName">No file chosen</span>
+            <button onclick="uploadPdf()">Upload PDF</button>
+        </div>
+        
+        <p id="errorMessage" class="error-message">Please choose a PDF format file.</p>
+
+        <textarea id="pdfText" placeholder="PDF content will appear here" readonly></textarea>
+
+        <div class="question-box">
+            <input type="text" id="question" placeholder="Ask a question">
+            <button onclick="askQuestion()">Ask</button>
+        </div>
+
+        <p id="answer"></p>
+    </div>
+</body>
+</html>
